@@ -15,6 +15,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@types/mongodb": "^3.1.28",
     "bcrypt": "^3.0.0",
     "body-parser": "^1.18.3",
     "cors": "^2.8.4",
@@ -23,6 +24,7 @@
     "helmet": "^3.13.0",
     "http-status": "^1.2.0",
     "jwt-then": "^1.0.1",
+    "mongodb": "^3.3.0-beta2",
     "mongoose": "^5.2.15"
   },
   "devDependencies": {

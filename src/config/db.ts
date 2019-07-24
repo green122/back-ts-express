@@ -5,7 +5,7 @@ mongoose.set('useCreateIndex', true);
 
 // Connecting to the database
 export default (async () => {
-  try {
+  try {        
     await mongoose.connect(
       CONFIG.DB_HOST,
       { useNewUrlParser: true }

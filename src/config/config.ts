@@ -1,9 +1,8 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
-
 export default {
   APP: process.env.APP || 'development',
-  PORT: process.env.PORT || '3000',
+  PORT: process.env.PORT || '3004',
 
   DB_DIALECT: process.env.DB_DIALECT || 'mongo',
   DB_HOST: process.env.DB_HOST || 'mongodb://localhost:27017/example_db',
