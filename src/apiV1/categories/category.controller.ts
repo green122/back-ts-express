@@ -50,8 +50,8 @@ export default class CategoryController {
   public create = async (req: Request, res: Response): Promise<any> => {
     const variation = req.body;
 
-    const variationEntity = new Category({ ...variation });
-    const savedVariation = await variationEntity.save();
+    const categoryEntity = new Category({ ...variation });
+    const savedVariation = await categoryEntity.save();
     if (!savedVariation) {
       return res.status(404).send({
         success: false,
@@ -71,7 +71,7 @@ export default class CategoryController {
     const categoriesToCreate = [];
 
     categories.forEach(category => {
-      (category.id ? categoriesToUpdate : categoriesToCreate).push(category);
+      (category.id && !category.id.includes('temp') ? categoriesToUpdate : categoriesToCreate).push(category);
     });
 
     const createPromises = categoriesToCreate.map(category =>

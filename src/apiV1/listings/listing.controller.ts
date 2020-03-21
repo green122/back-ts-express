@@ -4,7 +4,6 @@ import * as jwt from "jwt-then";
 import { MongoClient } from "mongodb";
 import config from "../../config/config";
 import Listing from "./listing.model";
-import CONFIG from "../../config/config";
 
 export default class UserController {
   public findAll = async (req: Request, res: Response): Promise<any> => {
@@ -58,31 +57,27 @@ export default class UserController {
   };
 
   public update = async (req: Request, res: Response): Promise<any> => {
-    const { name, lastName, email, password } = req.body;
+    console.log(req.file, req.files);
+    const { images, name, lastName, email, password } = req.body;
     try {
-      const userUpdated = await Listing.findByIdAndUpdate(
-        req.params.id,
-        {
-          $set: {
-            name,
-            lastName,
-            email,
-            password
-          }
-        },
-        { new: true }
-      );
-      if (!userUpdated) {
-        return res.status(404).send({
-          success: false,
-          message: "User not found",
-          data: null
-        });
-      }
+      const listingCreated = await Listing.find
+      // const userUpdated = await Listing.findByIdAndUpdate(
+      //   req.params.id,
+      //   {
+      //     $set: {
+      //       name,
+      //       lastName,
+      //       email,
+      //       password
+      //     }
+      //   },
+      //   { new: true }
+      // );
       res.status(200).send({
         success: true,
-        data: userUpdated
-      });
+        images: (req.files as any[]).map((fileInfo: any) => fileInfo.location)
+        // data: userUpdated
+      })
     } catch (err) {
       res.status(500).send({
         success: false,
