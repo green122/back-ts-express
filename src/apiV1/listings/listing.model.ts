@@ -11,7 +11,8 @@ const ListingSchema = Schema(
     description: {
       type: String,
       required: false
-    }
+    },
+    images: []
     // category: {
     //   type: String,
     //   required: true,
