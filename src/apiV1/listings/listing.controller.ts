@@ -1,16 +1,27 @@
-import * as bcrypt from "bcrypt";
-import { Request, Response } from "express";
-import * as jwt from "jwt-then";
-import { MongoClient } from "mongodb";
-import config from "../../config/config";
-import Listing from "./listing.model";
+import "reflect-metadata";
+import {injectable} from 'inversify';
+import {Request, Response} from "express";
+import {Listing, ListingImages} from "./listing.model";
+import {Category} from "../categories/category.model";
+import {Variation} from "../variations/variation.model";
+import {Option} from "../options/option.model";
+import {CategoryPersistence} from "../categories/category.persistence";
 
-export default class UserController {
+@injectable()
+export default class ListingController {
+
+  constructor(private categoryPersistence: CategoryPersistence) {
+  }
+
   public findAll = async (req: Request, res: Response): Promise<any> => {
     try {
-      const users = await Listing.find();
+      const listings = await Listing.findAll({
+        include: [
+          {model: ListingImages}
+        ]
+      });
 
-      if (!users) {
+      if (!listings) {
         return res.status(404).send({
           success: false,
           message: "Users not found",
@@ -20,7 +31,7 @@ export default class UserController {
 
       res.status(200).send({
         success: true,
-        data: users
+        data: listings
       });
     } catch (err) {
       res.status(500).send({
@@ -33,20 +44,27 @@ export default class UserController {
 
   public findOne = async (req: Request, res: Response): Promise<any> => {
     try {
-      console.log(req.params.id);
-      const user = await Listing.findById(req.params.id, { password: 0 });
-      if (!user) {
+      const listing = await Listing.findByPk(req.params.id, {
+        // raw: true,
+        // nest: true,
+        include: [{
+          model: ListingImages, attributes: ['url', 'urlPreview']
+        }],
+      });
+      if (!listing) {
         return res.status(404).send({
           success: false,
           message: "User not found",
           data: null
         });
       }
+      const listingObject = JSON.parse(JSON.stringify(listing));
+      const category = await this.categoryPersistence.findCategoryById((listingObject as any).categoryId);
 
       res.status(200).send({
-        success: true,
-        data: user
-      });
+          ...listingObject, category
+        }
+      );
     } catch (err) {
       res.status(500).send({
         success: false,
@@ -56,29 +74,21 @@ export default class UserController {
     }
   };
 
-  public update = async (req: Request, res: Response): Promise<any> => {
-    console.log(req.file, req.files);
-    const { images, name, lastName, email, password } = req.body;
+  public update = async (req: any, res: Response): Promise<any> => {
+    const {listing} = req.body;
+    const listingRec = JSON.parse(listing);
+    const {urls, previewUrls}: { urls: string[], previewUrls: string[] } = req.files;
     try {
-      const listingCreated = await Listing.find
-      // const userUpdated = await Listing.findByIdAndUpdate(
-      //   req.params.id,
-      //   {
-      //     $set: {
-      //       name,
-      //       lastName,
-      //       email,
-      //       password
-      //     }
-      //   },
-      //   { new: true }
-      // );
-      res.status(200).send({
-        success: true,
-        images: (req.files as any[]).map((fileInfo: any) => fileInfo.location)
-        // data: userUpdated
-      })
+      const listingEntity = new Listing(listingRec);
+      const savedListing = await listingEntity.save();
+      const listingId: string = savedListing.get('id') as string;
+      console.log('AAAAAAAAAAAAAAA    ', listingId);
+      const listingImages = urls.map((url, index) => ({listingId, url, urlPreview: previewUrls[index]}));
+      console.log('BBBBBBBBBBBBBB    ', listingImages);
+      await ListingImages.bulkCreate(listingImages);
+      res.status(200).send();
     } catch (err) {
+      console.log(err);
       res.status(500).send({
         success: false,
         message: err.toString(),
@@ -88,23 +98,23 @@ export default class UserController {
   };
 
   public remove = async (req: Request, res: Response): Promise<any> => {
-    try {
-      const user = await Listing.findByIdAndRemove(req.params.id);
-
-      if (!user) {
-        return res.status(404).send({
-          success: false,
-          message: "User not found",
-          data: null
-        });
-      }
-      res.status(204).send();
-    } catch (err) {
-      res.status(500).send({
-        success: false,
-        message: err.toString(),
-        data: null
-      });
-    }
+    // try {
+    //   const user = await Listing.destroy(req.params.id);
+    //
+    //   if (!user) {
+    //     return res.status(404).send({
+    //       success: false,
+    //       message: "User not found",
+    //       data: null
+    //     });
+    //   }
+    //   res.status(204).send();
+    // } catch (err) {
+    //   res.status(500).send({
+    //     success: false,
+    //     message: err.toString(),
+    //     data: null
+    //   });
+    // }
   };
 }

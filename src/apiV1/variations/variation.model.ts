@@ -1,54 +1,80 @@
-import * as mongoose from "mongoose";
-import deleteSystemFields from "../../helpers/deleteSystemFields";
-const Schema = mongoose.Schema;
+import Sequelize, {Model} from "sequelize";
+import {sequelize} from "../../config/db";
+import {Category} from "../categories/category.model";
+import {Option} from "../options/option.model";
 
-const OptionSchema = Schema({
-  name: String,
-  price: Number
-});
+export interface IVariationRequest {
+  id: number;
+  name: string;
+  varyPrice: boolean;
+  options: IOption[];
+}
 
-const VariationSchema = Schema(
+export interface IOption {
+  id: string;
+  name: string;
+  price?: number;
+}
+
+class Variation extends Model {
+}
+
+Variation.init(
   {
-    name: {
-      type: String,
-      required: true,
-      trim: true
+    id: {
+      type: Sequelize.INTEGER,
+      autoIncrement: true,
+      allowNull: false,
+      primaryKey: true,
     },
-    options: { type: [OptionSchema] },
-    priceVary: {
-      type: Boolean
+    variation: {
+      type: Sequelize.STRING,
+      allowNull: false
     }
-  },
-  {
-    timestamps: true,
-    toJSON: { virtuals: true }
-  }
+  }, {sequelize, modelName: 'variations', timestamps: false,}
 );
 
-VariationSchema.virtual("id").get(function() {
-  return this._id.toString();
-});
+class CategoryVariation extends Model {
+}
 
-OptionSchema.virtual("id").get(function() {
-  return this._id.toString();
-});
+CategoryVariation.init(
+  {
+    categoryId: {
+      type: Sequelize.INTEGER,
+      allowNull: false,
+      field: 'category_id'
+    },
+    variationId: {
+      type: Sequelize.INTEGER,
+      allowNull: false,
+      field: 'variation_id'
+    },
+    varyPrice: {
+      type: Sequelize.BOOLEAN,
+      allowNull: true,
+      field: 'vary_price'
+    },
+  }, {sequelize, modelName: 'category_variations', timestamps: false,}
+);
 
-OptionSchema.set("toJSON", {
-  virtuals: true,
-  versionKey: false,
-  transform(doc, obj) {
-    const newDoc = deleteSystemFields(obj);
-    return newDoc;
-  }
-});
+class OptionVariation extends Model {
+}
 
-VariationSchema.set("toJSON", {
-  virtuals: true,
-  versionKey: false,
-  transform(doc, obj) {
-    const newDoc = deleteSystemFields(obj);
-    return newDoc;
-  }
-});
+OptionVariation.init(
+  {
+    optionId: {
+      type: Sequelize.INTEGER,
+      allowNull: false,
+      field: 'option_id'
+    },
+    variationId: {
+      type: Sequelize.INTEGER,
+      allowNull: false,
+      field: 'variation_id'
+    },
+  }, {sequelize, modelName: 'option_variations', timestamps: false,}
+);
 
-export default mongoose.model("Variation", VariationSchema);
+Option.belongsToMany(Variation, {through: OptionVariation});
+Variation.belongsToMany(Option, {through: OptionVariation});
+export {Variation, CategoryVariation, OptionVariation};

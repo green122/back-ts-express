@@ -1,4 +1,3 @@
-import * as bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
 import * as jwt from 'jwt-then';
 import { MongoClient } from 'mongodb';
@@ -30,7 +29,7 @@ export default class UserController {
 
     // try {
     //   const users = await User.find();
-      
+
     //   if (!users) {
     //     return res.status(404).send({
     //       success: false,

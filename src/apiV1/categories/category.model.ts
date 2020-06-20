@@ -1,43 +1,25 @@
-import * as mongoose from "mongoose";
-import deleteSystemFields from "../../helpers/deleteSystemFields";
-const Schema = mongoose.Schema;
+import Sequelize, {Model} from 'sequelize';
+import {sequelize} from "../../config/db";
+import {CategoryVariation, Variation} from "../variations/variation.model";
 
-const CategorySchema = Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-      trim: true
+class Category extends Model {
+}
+
+Category.init({
+    id: {
+      type: Sequelize.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+      allowNull: false
     },
-    variations: [
-      {
-        variationId: String,
-        options: [
-          {
-            id: String,
-            price: Number
-          }
-        ]
-      }
-    ]
-  },
-  {
-    timestamps: true,
-    useNestedStrict: true
-  }
+    name: {
+      type: Sequelize.STRING,
+      allowNull: false
+    }
+  }, {sequelize, modelName: 'categories', timestamps: false}
 );
 
-CategorySchema.virtual("id").get(function() {
-  return this._id.toString();
-});
+Category.belongsToMany(Variation, { through: CategoryVariation, foreignKey: 'categoryId'});
+Variation.belongsToMany(Category, {through: CategoryVariation,  foreignKey: 'variationId'});
 
-CategorySchema.set("toJSON", {
-  virtuals: true,
-  versionKey: false,
-  transform(doc, obj) {
-    const newDoc = deleteSystemFields(obj);
-    return newDoc;
-  }
-});
-
-export default mongoose.model("Category", CategorySchema);
+export {Category};

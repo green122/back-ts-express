@@ -1,36 +1,36 @@
-import * as bcrypt from "bcrypt";
-import { Request, Response } from "express";
-import * as jwt from "jwt-then";
-import { MongoClient } from "mongodb";
-import config from "../../config/config";
-import Variation from "./variation.model";
+import {Request, Response} from "express";
+// import { MongoClient } from "mongodb";
+// import config from "../../config/config";
+import {Option} from "../options/option.model";
+import  {Op} from 'sequelize';
+import {IOption, IVariationRequest, OptionVariation, Variation} from "./variation.model";
+import { injectable } from "inversify";
+import {VariationDomain} from "./variation.domain";
 
-export default class UserController {
+
+@injectable()
+export class VariationController {
+
+  constructor(private variationDomain: VariationDomain) {
+  }
+
   public findAll = async (req: Request, res: Response): Promise<any> => {
     try {
-      const variations = await Variation.find();
-
-      if (!variations) {
-        return res.status(404).send({
-          success: false,
-          message: "Users not found",
-          data: null
+      const dbResult = await Variation.findAll(
+        {
+          attributes: ['id', 'variation'],
+          include: [
+            {model: Option, attributes: ['id', 'name']}
+          ]
         });
-      }
-
-      res.status(200).send(variations);
-    } catch (err) {
-      res.status(500).send({
-        success: false,
-        message: err.toString()
-      });
-    }
+      res.status(200).send(dbResult);
+    } catch (err) { }
   };
 
   public findOne = async (req: Request, res: Response): Promise<any> => {
     try {
-      const user = await Variation.findById(req.params.id);
-      if (!user) {
+      const variation = await Variation.findByPk(req.params.id);
+      if (!variation) {
         return res.status(404).send({
           success: false,
           message: "User not found",
@@ -40,7 +40,7 @@ export default class UserController {
 
       res.status(200).send({
         success: true,
-        data: user
+        data: variation
       });
     } catch (err) {
       res.status(500).send({
@@ -52,9 +52,10 @@ export default class UserController {
   };
 
   public create = async (req: Request, res: Response): Promise<any> => {
-    const variation = req.body;
+    const variation: IVariationRequest = req.body;
 
-    const variationEntity = new Variation({ ...variation });
+    const variationDto = {variation: variation.name, vary_price: variation.varyPrice};
+    const variationEntity = new Variation(variationDto);
     const savedVariation = await variationEntity.save();
     if (!savedVariation) {
       return res.status(404).send({
@@ -70,68 +71,18 @@ export default class UserController {
   };
 
   public update = async (req: Request, res: Response): Promise<any> => {
-    const variations = req.body;
-    const variationsToUpdate = [];
-    const variationsToCreate = [];
+    const variation: IVariationRequest = req.body;
 
-    variations.forEach(variation => {
-      (!variation.id || /^temp_/.test(variation.id)
-        ? variationsToCreate
-        : variationsToUpdate
-      ).push(variation);
-    });
+    await this.variationDomain.updateVariationAndOptions(variation);
 
-    const createPromises = variationsToCreate.map(variation =>
-      new Variation({ ...variation }).save()
-    );
-    const updatePromises = variationsToUpdate.map(variation =>
-      Variation.findByIdAndUpdate(variation.id, variation, { new: true })
-    );
-
-    const result = await Promise.all(createPromises.concat(updatePromises));
-
-    return res.status(200).send(result.map(variation => variation.toJSON()));
-
-    // try {
-    //   const userUpdated = await Variation.findByIdAndUpdate(
-    //     req.params.id,
-    //     {
-    //       $set: {
-    //         name,
-    //         lastName,
-    //         email,
-    //         password
-    //       }
-    //     },
-    //     { new: true }
-    //   );
-    //   if (!userUpdated) {
-    //     return res.status(404).send({
-    //       success: false,
-    //       message: "User not found",
-    //       data: null
-    //     });
-    //   }
-    //   res.status(200).send({
-    //     success: true,
-    //     data: userUpdated
-    //   });
-    // } catch (err) {
-    //   res.status(500).send({
-    //     success: false,
-    //     message: err.toString(),
-    //     data: null
-    //   });
-    // }
     res.status(200).send({
       success: true,
-      data: variations
     });
   };
 
   public remove = async (req: Request, res: Response): Promise<any> => {
     try {
-      const user = await Variation.findByIdAndRemove(req.params.id);
+      const user = await Variation.findByPk(req.params.id);
 
       if (!user) {
         return res.status(404).send({

@@ -1,61 +1,48 @@
-import {S3} from 'aws-sdk';
+import {injectable} from 'inversify';
 import {Router} from "express";
 import multer, {diskStorage} from 'multer';
-import multerS3 from 'multer-s3';
 
 import verifyToken from "../../helpers/verifyToken";
-import Controller from "./listing.controller";
-import { resolve } from 'path';
+import {uploadImagesToStorage} from "../../helpers/uploadMiddleware";
+import ListingController from "./listing.controller";
 
-const user: Router = Router();
-const controller = new Controller();
-const s3 = new S3({
-  accessKeyId: '',
-  secretAccessKey: '',
-  region: 'eu-central-1',
-})
+@injectable()
+export class ListingRoute {
+  private listing: Router = Router();
 
-const storage = diskStorage({
-
-  destination:  (req, file, cb) => {
-    console.log(file);
-    cb(null, resolve(__dirname, './test'))
-  },
-
-  filename: (req, file, cb) => {
-    console.log('!!!!!!!!!!!', file);
-    cb(null, __dirname + file.originalname)
+  public get listingRoute() {
+    return this.listing;
   }
-})
 
-const upload1 = multer({
-  storage
-})
+  private storage = multer.memoryStorage();
+  private uploadImages = multer({storage: this.storage, limits: {fileSize: 4 * 1024 * 1024}});
 
-const upload = multer({
-  storage: multerS3({
-    s3,
-    bucket: 'e-shop-brooche-bouquet',
-    metadata:  (req, file, cb) => {
-      console.log('!!!!!!!!', file)
-      cb(null, {fieldName: file.fieldname});
-    },
-    key:  (req, file, cb) => {
-      console.log('!!!!!!!!', file)
-      cb(null, Date.now().toString()+file.originalname)
-    }
-  })
-})
-// Retrieve all Users
-user.get("/", controller.findAll);
+  constructor(private controller: ListingController) {
+    this.configureRoute();
+  }
 
-// Retrieve a Specific User
-user.get("/:id", controller.findOne);
+  private configureRoute() {
+    this.listing.get("/", this.controller.findAll);
 
-// Update a User with Id
-user.post("/:id", upload.array('file'), controller.update);
 
-// Delete a User with Id
-user.delete("/:id", controller.remove);
+    this.listing.get("/:id", this.controller.findOne);
 
-export default user;
+
+    this.listing.post("/:id?", this.uploadImages.array('file') as any,
+      uploadImagesToStorage,
+      this.controller.update);
+
+    this.listing.delete("/:id", this.controller.remove);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+

@@ -5,7 +5,10 @@
   ],
   "rules": {
     "no-implicit-dependencies": [true, "dev"],
+    "interface-over-type-literal": false,
     "no-console": [true, "dev"],
-    "object-literal-sort-keys": [false, "dev"]
+    "object-literal-sort-keys": [false, "dev"],
+    "max-classes-per-file": [false],
+    "ordered-imports": false
   }
 }
