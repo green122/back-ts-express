@@ -1,26 +1,37 @@
-import { Router } from "express";
+import {Router} from "express";
+import {injectable} from 'inversify';
 import verifyToken from "../../helpers/verifyToken";
-import Controller from "./variation.controller";
+import {VariationController} from "./variation.controller";
 
-const variation: Router = Router();
-const controller = new Controller();
+@injectable()
+export class VariationRoute {
+  private variation: Router = Router();
 
-// Retrieve all Users
-variation.get("/", controller.findAll);
+  public get variationRoute() {
+    return this.variation;
+  }
 
-// Retrieve a Specific User
-variation.get("/:id", verifyToken, controller.findOne);
+  constructor(private controller: VariationController) {
+    this.configureRoute();
+  }
 
-// Update a User with Id
-variation.put("/:id", controller.update);
+  private configureRoute() {
+    // Retrieve all Users
+    this.variation.get("/", this.controller.findAll);
 
-// Create a User
-variation.post("/", controller.create);
+    // Retrieve a Specific User
+    this.variation.get("/:id", verifyToken, this.controller.findOne);
 
-// Update all Variations with Id
-variation.put("/", controller.update);
+    // Update a User with Id
+    this.variation.put("/:id", this.controller.update);
 
-// Delete a User with Id
-variation.delete("/:id", controller.remove);
+    // Create a User
+    this.variation.post("/", this.controller.create);
 
-export default variation;
+    // Update all Variations with Id
+    this.variation.put("/", this.controller.update);
+
+    // Delete a User with Id
+    this.variation.delete("/:id", this.controller.remove);
+  }
+}

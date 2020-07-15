@@ -1,26 +1,42 @@
-import { Router } from "express";
+import {injectable} from 'inversify';
+import {Router} from "express";
+import CategoryController from "./category.controller";
 import verifyToken from "../../helpers/verifyToken";
-import Controller from "./category.controller";
 
-const variation: Router = Router();
-const controller = new Controller();
+@injectable()
+export class CategoryRoute {
 
+  private category: Router = Router();
+
+  public get categoryRoute() {
+    return this.category;
+  }
+
+  constructor(private controller: CategoryController) {
+    this.configureRoute();
+  }
+
+  private configureRoute() {
 // Retrieve all Users
-variation.get("/", controller.findAll);
+    this.category.get("/", this.controller.findAll);
 
 // Retrieve a Specific User
-variation.get("/:id", verifyToken, controller.findOne);
+    this.category.get("/:id", this.controller.findOne);
 
 // Update a User with Id
-variation.put("/:id", controller.update);
+    this.category.put("/:id", this.controller.update);
 
 // Create a User
-variation.post("/", controller.create);
+    this.category.post("/", this.controller.create);
 
 // Update all Variations with Id
-variation.put("/", controller.update);
+    this.category.put("/", this.controller.update);
+
+    this.category.put("/varyPrice/:categoryId", this.controller.updateVaryPrice);
 
 // Delete a User with Id
-variation.delete("/:id", controller.remove);
+    this.category.delete("/:id", this.controller.remove);
+  }
 
-export default variation;
+}
+

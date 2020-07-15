@@ -1,21 +1,82 @@
-import { Request, Response } from "express";
-import Category from "./category.model";
+import {Request, Response} from "express";
+import {injectable} from 'inversify';
+import {Category} from "./category.model";
+import {CategoryVariation, IVariationRequest, OptionVariation, Variation} from "../variations/variation.model";
+import {Option, Price} from "../options/option.model";
+import {sequelize} from "../../config/db";
+import {Op} from "sequelize";
+import {PricesDomain} from "../prices/prices.domain";
+import {CategoryPersistence} from "./category.persistence";
 
+type  AnyRecord = { [key: string]: any }
+
+interface IRawPrice {
+  categoryId: number;
+  variationId: number;
+  optionId: number;
+  price: number;
+}
+
+interface IOption {
+  id: number;
+  name: string;
+  price?: number;
+}
+
+export interface IVariation {
+  id: number;
+  variation: string;
+  options: IOption[];
+  varyPrice?: boolean;
+}
+
+
+export interface ICategory {
+  id: number;
+  name: string;
+  variations: IVariation[];
+}
+
+@injectable()
 export default class CategoryController {
+
+  constructor(private pricesDomain: PricesDomain,
+              private categoryPersistence: CategoryPersistence
+  ) {
+  }
+
   public findAll = async (req: Request, res: Response): Promise<any> => {
     try {
-      const categories = await Category.find();
+      const dbResult = await Category.findAll(
+        {
+          attributes: ['id', 'name',],
+          logging: console.log,
+          // include: [
+          //   {
+          //     model: Variation, through: { attributes: ['varyPrice']}, attributes: ['id', 'variation'],
+          //     include: [{
+          //       model: Option, through: {attributes: []},
+          //     }]
+          //   },
+          // ]
 
-      if (!categories) {
-        return res.status(404).send({
-          success: false,
-          message: "Users not found",
-          data: null
         });
-      }
 
-      res.status(200).send(categories);
-    } catch (err) {
+
+      res.status(200).send(dbResult);
+
+
+      // if (!categories) {
+      //   return res.status(404).send({
+      //     success: false,
+      //     message: "Users not found",
+      //     data: null
+      //   });
+      // }
+      //
+
+    } catch
+      (err) {
       res.status(500).send({
         success: false,
         message: err.toString()
@@ -24,9 +85,11 @@ export default class CategoryController {
   };
 
   public findOne = async (req: Request, res: Response): Promise<any> => {
+    const categoryId = req.params.id;
     try {
-      const user = await Category.findById(req.params.id);
-      if (!user) {
+     const category = await this.categoryPersistence.findCategoryById(categoryId);
+
+      if (!category) {
         return res.status(404).send({
           success: false,
           message: "User not found",
@@ -34,10 +97,7 @@ export default class CategoryController {
         });
       }
 
-      res.status(200).send({
-        success: true,
-        data: user
-      });
+      res.status(200).send(category);
     } catch (err) {
       res.status(500).send({
         success: false,
@@ -48,11 +108,12 @@ export default class CategoryController {
   };
 
   public create = async (req: Request, res: Response): Promise<any> => {
-    const variation = req.body;
+    const category: IVariationRequest = req.body;
 
-    const categoryEntity = new Category({ ...variation });
-    const savedVariation = await categoryEntity.save();
-    if (!savedVariation) {
+    const {id, ...categoryDto} = category;
+    const categoryEntity = new Category(categoryDto);
+    const savedCategory = await categoryEntity.save();
+    if (!savedCategory) {
       return res.status(404).send({
         success: false,
         message: "Something wrong",
@@ -61,66 +122,41 @@ export default class CategoryController {
     }
     res.status(200).send({
       success: true,
-      data: savedVariation
+      data: savedCategory
     });
   };
 
   public update = async (req: Request, res: Response): Promise<any> => {
-    const categories = req.body;
-    const categoriesToUpdate = [];
-    const categoriesToCreate = [];
+    const category: ICategory = req.body;
 
-    categories.forEach(category => {
-      (category.id && !category.id.includes('temp') ? categoriesToUpdate : categoriesToCreate).push(category);
+    const categoryVariations = category.variations.map(variation => ({
+      categoryId: category.id,
+      variationId: variation.id
+    }));
+    await CategoryVariation.bulkCreate(categoryVariations, {ignoreDuplicates: true});
+
+    const variationsIdsToKeep = categoryVariations.map(({variationId}) => variationId);
+    await CategoryVariation.destroy({
+      where: {
+        categoryId: category.id,
+        variationId: {[Op.notIn]: variationsIdsToKeep}
+      }
     });
 
-    const createPromises = categoriesToCreate.map(category =>
-      new Category({ ...category }).save()
-    );
-    const updatePromises = categoriesToUpdate.map(category =>
-      Category.findByIdAndUpdate(category.id, category, { new: true })
-    );
-
-    const result = await Promise.all(createPromises.concat(updatePromises));
-
-    return res.status(200).send(result.map(category => category.toJSON()));
-
-    // try {
-    //   const userUpdated = await Variation.findByIdAndUpdate(
-    //     req.params.id,
-    //     {
-    //       $set: {
-    //         name,
-    //         lastName,
-    //         email,
-    //         password
-    //       }
-    //     },
-    //     { new: true }
-    //   );
-    //   if (!userUpdated) {
-    //     return res.status(404).send({
-    //       success: false,
-    //       message: "User not found",
-    //       data: null
-    //     });
-    //   }
-    //   res.status(200).send({
-    //     success: true,
-    //     data: userUpdated
-    //   });
-    // } catch (err) {
-    //   res.status(500).send({
-    //     success: false,
-    //     message: err.toString(),
-    //     data: null
-    //   });
-    // }
+    res.status(200).send();
   };
+
+  public updateVaryPrice = async (req: Request, res: Response): Promise<any> => {
+    const {categoryId} = req.params;
+    const {variationId, varyPrice} = req.body;
+
+    await CategoryVariation.update({varyPrice}, {where: {categoryId, variationId}});
+    res.status(200).send();
+  }
 
   public remove = async (req: Request, res: Response): Promise<any> => {
     try {
-      const user = await Category.findByIdAndRemove(req.params.id);
+      const user = null;
 
       if (!user) {
         return res.status(404).send({
@@ -138,4 +174,19 @@ export default class CategoryController {
       });
     }
   };
+
+
+  private groupBy(key: string): ((arr: AnyRecord[]) => AnyRecord) {
+    return (arr: AnyRecord[]) => {
+      const result = {};
+      arr.forEach(entity => {
+        if (!entity[key]) {
+          return;
+        }
+        console.log(entity, result);
+        result[entity[key]] = result[entity[key]] ? result[entity[key]].concat(entity) : [entity];
+      })
+      return result;
+    }
+  }
 }
