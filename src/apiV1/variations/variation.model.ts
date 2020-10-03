@@ -5,13 +5,13 @@ import {Option} from "../options/option.model";
 
 export interface IVariationRequest {
   id: number;
-  name: string;
+  variation: string;
   varyPrice: boolean;
   options: IOption[];
 }
 
 export interface IOption {
-  id: string;
+  id: number;
   name: string;
   price?: number;
 }
@@ -72,7 +72,7 @@ OptionVariation.init(
       allowNull: false,
       field: 'variation_id'
     },
-  }, {sequelize, modelName: 'option_variations', timestamps: false,}
+  }, {sequelize, modelName: 'options_variations', timestamps: false,}
 );
 
 Option.belongsToMany(Variation, {through: OptionVariation});

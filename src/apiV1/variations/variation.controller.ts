@@ -2,9 +2,9 @@ import {Request, Response} from "express";
 // import { MongoClient } from "mongodb";
 // import config from "../../config/config";
 import {Option} from "../options/option.model";
-import  {Op} from 'sequelize';
+import {Op} from 'sequelize';
 import {IOption, IVariationRequest, OptionVariation, Variation} from "./variation.model";
-import { injectable } from "inversify";
+import {injectable} from "inversify";
 import {VariationDomain} from "./variation.domain";
 
 
@@ -24,7 +24,8 @@ export class VariationController {
           ]
         });
       res.status(200).send(dbResult);
-    } catch (err) { }
+    } catch (err) {
+    }
   };
 
   public findOne = async (req: Request, res: Response): Promise<any> => {
@@ -54,7 +55,7 @@ export class VariationController {
   public create = async (req: Request, res: Response): Promise<any> => {
     const variation: IVariationRequest = req.body;
 
-    const variationDto = {variation: variation.name, vary_price: variation.varyPrice};
+    const variationDto = {variation: variation.variation, vary_price: variation.varyPrice};
     const variationEntity = new Variation(variationDto);
     const savedVariation = await variationEntity.save();
     if (!savedVariation) {
@@ -64,10 +65,7 @@ export class VariationController {
         data: null
       });
     }
-    res.status(200).send({
-      success: true,
-      data: savedVariation
-    });
+    res.status(200).send(savedVariation);
   };
 
   public update = async (req: Request, res: Response): Promise<any> => {
@@ -82,9 +80,19 @@ export class VariationController {
 
   public remove = async (req: Request, res: Response): Promise<any> => {
     try {
-      const user = await Variation.findByPk(req.params.id);
+      const variation = await Promise.all([
+        Variation.destroy({
+          where: {
+            id: req.params.id
+          }
+        }),
+        OptionVariation.destroy({
+          where: {
+            variationId: req.params.id
+          }
+        })]);
 
-      if (!user) {
+      if (!variation) {
         return res.status(404).send({
           success: false,
           message: "User not found",

@@ -1,34 +1,50 @@
-import * as mongoose from "mongoose";
-const Schema = mongoose.Schema;
+import Sequelize, {Model} from 'sequelize';
+import {sequelize} from "../../config/db";
 
-const UserSchema = Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-      trim: true
+class User extends Model {
+}
+
+User.init({
+    id: {
+      type: Sequelize.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+      allowNull: false
     },
-    lastName: {
-      type: String,
-      required: true
+    name: {
+      type: Sequelize.STRING,
+      allowNull: false
     },
     email: {
-      type: String,
-      unique: true,
-      match: /^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$/,
-      required: true,
-      trim: true
+      type: Sequelize.STRING,
+      allowNull: false
     },
     password: {
-      type: String,
-      required: true,
-      trim: true
+      type: Sequelize.STRING,
+      allowNull: true
+    },
+    registrationType: {
+      type: Sequelize.STRING,
+      field: 'registration_type',
+      allowNull: false
+    },
+    avatarUrl: {
+      type: Sequelize.STRING,
+      field: 'avatar_url',
+      allowNull: true
+    },
+    refreshToken: {
+      type: Sequelize.STRING,
+      field: 'refresh_token',
+      allowNull: true
     }
-  },
-  {
-    timestamps: true,
-    useNestedStrict: true
+  }, {
+    sequelize, modelName: 'users', timestamps: false, scopes: {
+      mainInfo: {
+        attributes: {exclude: ['password', 'refreshToken', 'registrationType']},
+      }
+    }
   }
 );
 
-export default mongoose.model("User", UserSchema);
+export {User};

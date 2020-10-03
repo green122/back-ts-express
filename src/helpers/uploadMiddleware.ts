@@ -10,6 +10,25 @@ const s3 = new S3({
   region: 'eu-central-1',
 })
 
+export async function removeImagesFromStorage(imagesData: Array<{ url: string; urlPreview: string }>) {
+  if (!imagesData[0]) {
+    return;
+  }
+
+  const deletePromises = [];
+  imagesData.forEach(image => {
+    deletePromises.push(s3.deleteObject({
+      Bucket: 'e-shop-brooche-bouquet',
+      Key: image.url.split('/').slice(-1)[0]
+    }).promise());
+    deletePromises.push(s3.deleteObject({
+      Bucket: 'e-shop-brooche-bouquet/previews',
+      Key: image.urlPreview.split('/').slice(-1)[0]
+    }).promise());
+  })
+  await Promise.all(deletePromises);
+}
+
 export async function uploadImagesToStorage(req: any, res: Response, next: NextFunction) {
   const images: Express.Multer.File[] = req.files;
   const resizedPromises = images.map(resizeAndMakePreview);

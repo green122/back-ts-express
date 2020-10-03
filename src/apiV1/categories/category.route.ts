@@ -2,6 +2,7 @@ import {injectable} from 'inversify';
 import {Router} from "express";
 import CategoryController from "./category.controller";
 import verifyToken from "../../helpers/verifyToken";
+import {authenticate} from "../auth/auth.middleware";
 
 @injectable()
 export class CategoryRoute {
@@ -18,7 +19,7 @@ export class CategoryRoute {
 
   private configureRoute() {
 // Retrieve all Users
-    this.category.get("/", this.controller.findAll);
+    this.category.get("/", authenticate, this.controller.findAll);
 
 // Retrieve a Specific User
     this.category.get("/:id", this.controller.findOne);

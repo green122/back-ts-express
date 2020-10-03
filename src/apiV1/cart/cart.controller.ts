@@ -1,11 +1,14 @@
 import {Request, Response} from "express";
+import {v4 as uuid} from 'uuid';
+
 // import { MongoClient } from "mongodb";
 // import config from "../../config/config";
 import {Option} from "../options/option.model";
-import  {Op} from 'sequelize';
-import { injectable } from "inversify";
+import {Op} from 'sequelize';
+import {injectable} from "inversify";
 import {CartDomain} from "./cart.domain";
 import {IAddItemDTO} from "./cart.model";
+import httpStatus from "http-status";
 
 
 @injectable()
@@ -30,14 +33,17 @@ export class CartController {
   // };
 
   public findOne = async (req: Request, res: Response): Promise<any> => {
-    const cartId = req.params.id;
-    try {
-
-      const cart = await this.cartDomain.getCartById(cartId);
-      res.status(200).send({
-        success: true,
-        data: cart
+    const {cartId} = req.cookies;
+    if (!cartId) {
+     return res.status(404).send({
+        success: false,
+        message: 'no saved cart',
+        data: null
       });
+    }
+    try {
+      const cart = await this.cartDomain.getCartById(cartId);
+      res.status(200).send(cart);
     } catch (err) {
       res.status(500).send({
         success: false,
@@ -49,8 +55,14 @@ export class CartController {
 
   public create = async (req: Request, res: Response): Promise<any> => {
     const item: IAddItemDTO = req.body;
+    let {cartId} = req.cookies;
 
-    const savedItem = await  this.cartDomain.createOrderedItem(item)
+    if (!cartId) {
+      cartId = await this.cartDomain.createCard();
+      res.cookie('cartId', cartId, );
+    }
+
+    const savedItem = await this.cartDomain.createOrderedItem({...item, cartId});
     if (!savedItem) {
       return res.status(404).send({
         success: false,
@@ -58,40 +70,32 @@ export class CartController {
         data: null
       });
     }
-    res.status(200).send({
-      success: true,
-      data: savedItem
-    });
+    res.status(200).send(
+      savedItem
+    );
   };
 
-  // public update = async (req: Request, res: Response): Promise<any> => {
-  //   const variation: IVariationRequest = req.body;
-  //
-  //   await this.variationDomain.updateVariationAndOptions(variation);
-  //
-  //   res.status(200).send({
-  //     success: true,
-  //   });
-  // };
-  //
-  // public remove = async (req: Request, res: Response): Promise<any> => {
-  //   try {
-  //     const user = await Variation.findByPk(req.params.id);
-  //
-  //     if (!user) {
-  //       return res.status(404).send({
-  //         success: false,
-  //         message: "User not found",
-  //         data: null
-  //       });
-  //     }
-  //     res.status(204).send();
-  //   } catch (err) {
-  //     res.status(500).send({
-  //       success: false,
-  //       message: err.toString(),
-  //       data: null
-  //     });
-  //   }
-  // };
+  public update = async (req: Request, res: Response): Promise<any> => {
+    const item: IAddItemDTO = req.body;
+    const {cartId} = req.cookies;
+    if (!cartId) {
+      return res.status(httpStatus.BAD_REQUEST).send({
+        success: false,
+        message: "Cart id wasn't provided",
+      });
+    }
+
+    const updatedItem = await this.cartDomain.updateCart({...item, cartId});
+    if (!updatedItem) {
+      return res.status(404).send({
+        success: false,
+        message: "Something wrong",
+        data: null
+      });
+    }
+
+    res.status(200).send(
+      updatedItem
+    );
+  }
 }

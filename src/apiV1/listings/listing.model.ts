@@ -1,9 +1,10 @@
 import * as mongoose from "mongoose";
 import Sequelize, {Model} from "sequelize";
 import {sequelize} from "../../config/db";
-import {Option, Price} from "../options/option.model";
+import {Option} from "../options/option.model";
 import {OptionVariation, Variation} from "../variations/variation.model";
 import {Category} from "../categories/category.model";
+import {Price} from "../prices/prices.model";
 const Schema = mongoose.Schema;
 
 class Listing extends Model {

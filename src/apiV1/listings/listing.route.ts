@@ -30,6 +30,10 @@ export class ListingRoute {
 
     this.listing.post("/:id?", this.uploadImages.array('file') as any,
       uploadImagesToStorage,
+      this.controller.create);
+
+    this.listing.put("/:id", this.uploadImages.array('file') as any,
+      uploadImagesToStorage,
       this.controller.update);
 
     this.listing.delete("/:id", this.controller.remove);

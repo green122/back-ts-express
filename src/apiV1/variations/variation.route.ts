@@ -2,6 +2,7 @@ import {Router} from "express";
 import {injectable} from 'inversify';
 import verifyToken from "../../helpers/verifyToken";
 import {VariationController} from "./variation.controller";
+import {authenticate} from "../auth/auth.middleware";
 
 @injectable()
 export class VariationRoute {
@@ -17,7 +18,7 @@ export class VariationRoute {
 
   private configureRoute() {
     // Retrieve all Users
-    this.variation.get("/", this.controller.findAll);
+    this.variation.get("/", authenticate, this.controller.findAll);
 
     // Retrieve a Specific User
     this.variation.get("/:id", verifyToken, this.controller.findOne);

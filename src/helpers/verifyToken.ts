@@ -1,21 +1,32 @@
-import * as jwt from 'jwt-then';
+import * as jwt from 'jsonwebtoken';
 import config from '../config/config';
-const verifyToken = async (req, res, next): Promise<any> => {
-  // check header or url parameters or post parameters for token
-  const token: string = req.headers.authorization.split(' ')[1];
+import {promisify} from "util";
+import {ClaimVerifyResult} from "../apiV1/auth/auth.middleware";
 
-  if (!token) {
-    return res.status(403).send({ auth: false, message: 'No token provided.' });
-  }
+interface Claim {
+  token_use: string;
+  auth_time: number;
+  iss: string;
+  exp: number;
+  email: string;
+  clientId: string;
+}
 
-  try {
-    // verifies secret and checks exp
-    const decoded = await jwt.verify(token, config.JWT_ENCRYPTION);
-    req.email = decoded.email;
-    next();
-  } catch (err) {
-    res.status(500).send({ auth: false, message: err });
+const verifyPromised = promisify(jwt.verify.bind(jwt));
+
+const verifyToken = async (token: string): Promise<ClaimVerifyResult> => {
+  let result: ClaimVerifyResult;
+  const tokenSections = (token || '').split('.');
+  if (tokenSections.length < 2) {
+    throw new Error('requested token is invalid');
   }
+  const claim = await verifyPromised(token, config.JWT_ENCRYPTION) as Claim;
+  const currentSeconds = Math.floor((new Date()).valueOf() / 1000);
+  if (currentSeconds > claim.exp) {
+    throw new Error('token is expired or invalid');
+  }
+  result = {email: claim.email, clientId: claim.clientId, isValid: true};
+  return result;
 };
 
 export default verifyToken;

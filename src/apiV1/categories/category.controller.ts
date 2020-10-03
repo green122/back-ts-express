@@ -2,8 +2,6 @@ import {Request, Response} from "express";
 import {injectable} from 'inversify';
 import {Category} from "./category.model";
 import {CategoryVariation, IVariationRequest, OptionVariation, Variation} from "../variations/variation.model";
-import {Option, Price} from "../options/option.model";
-import {sequelize} from "../../config/db";
 import {Op} from "sequelize";
 import {PricesDomain} from "../prices/prices.domain";
 import {CategoryPersistence} from "./category.persistence";
@@ -38,7 +36,7 @@ export interface ICategory {
 }
 
 @injectable()
-export default class CategoryController {
+export default class CategoryController {o
 
   constructor(private pricesDomain: PricesDomain,
               private categoryPersistence: CategoryPersistence
@@ -147,8 +145,7 @@ export default class CategoryController {
   };
 
   public updateVaryPrice = async (req: Request, res: Response): Promise<any> => {
-    const {categoryId} = req.params;
-    const {variationId, varyPrice} = req.body;
+    const {categoryId, variationId, varyPrice} = req.body;
 
     await CategoryVariation.update({varyPrice}, {where: {categoryId, variationId}});
     res.status(200).send();

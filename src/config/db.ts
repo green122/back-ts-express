@@ -4,7 +4,7 @@ import * as path from "path";
 import CONFIG from "./config";
 import {Pool} from 'pg';
 
-const pool = new Pool({
+export const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
   database: 'shop',
@@ -12,12 +12,13 @@ const pool = new Pool({
 });
 mongoose.set("useCreateIndex", true);
 
-export const sequelize = new Sequelize('shop', 'postgres', '', {dialect: 'postgres'});
+export const sequelize = new Sequelize('shop', 'postgres', 'huh', {dialect: 'postgres'});
 
 console.log(path.resolve(__dirname, './test.db'));
 
 // Connecting to the database
 export default (async () => {
+
   try {
     // const {rows} = await pool.query('' +
     //   `SELECT *  FROM categories

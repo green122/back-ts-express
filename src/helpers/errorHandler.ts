@@ -1,4 +1,5 @@
 import * as httpStatus from 'http-status';
+import {TokenExpiredError} from "jsonwebtoken";
 
 // handle not found errors
 export const notFound = (req, res, next) => {
@@ -9,6 +10,19 @@ export const notFound = (req, res, next) => {
   });
   res.end();
 };
+
+export const unAuthorized = (err, req, res, next) => {
+  if (err instanceof TokenExpiredError || err.status === httpStatus.UNAUTHORIZED) {
+    res.status(httpStatus.UNAUTHORIZED);
+    res.json({
+      success: false,
+      message: 'token expired'
+    });
+    res.end();
+    return;
+  }
+  next(err);
+}
 
 // handle internal server errors
 export const internalServerError = (err, req, res, next) => {

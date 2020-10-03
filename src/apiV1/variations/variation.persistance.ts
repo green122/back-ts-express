@@ -20,7 +20,7 @@ export class VariationPersistance {
   }
 
   public async updateVariation(variation: IVariationRequest) {
-    await Variation.update({variation: variation.name, vary_price: variation.varyPrice}, {
+    await Variation.update({variation: variation.variation, vary_price: variation.varyPrice}, {
       where: {
         id: variation.id
       },

@@ -2,7 +2,7 @@ import {injectable} from "inversify";
 import {CartPersistance} from "./cart.persistance";
 import {OptionsDomain} from "../options/options.domain";
 import {v4 as uuid} from 'uuid';
-import {IAddItemDTO, OrderedItem, OrderedItemVariationOptions} from "./cart.model";
+import {IAddItemDTO, ICartDTO, ICartItemDTO, OrderedItem, OrderedItemVariationOptions} from "./cart.model";
 import {Listing} from "../listings/listing.model";
 
 @injectable()
@@ -11,20 +11,38 @@ export class CartDomain {
   ) {
   }
 
-  public async createOrderedItem(item: IAddItemDTO): Promise<IAddItemDTO> {
-    const itemWithCartId = item.cartId ? item : {...item, cartId: uuid()}
-    await this.cartPersistence.createOrderedItem(itemWithCartId);
-    return itemWithCartId;
+  public async createCard(): Promise<string> {
+    const cartId = uuid().toString();
+    await this.cartPersistence.createCard(cartId);
+    return cartId;
   }
 
-  public async getCartById(cartId: string): Promise<any> {
-    const cart = await this.cartPersistence.findCartById(cartId);
-    const pricesRequest = cart.map(item =>
-      (item.get('orderedItemVariations') as OrderedItemVariationOptions[]).map(
-        variationOption => ({categoryId: (item.get('listing') as Listing).get('categoryId'), variationId: variationOption.get('variationId'), optionId: variationOption.get('optionId') })
-      )
-    );
-    console.log(pricesRequest);
+  public async createOrderedItem(item: IAddItemDTO): Promise<OrderedItem> {
+    const created = await this.cartPersistence.createOrderedItem(item);
+    return created;
+  }
+
+  public calculateCartTotal(items: ICartItemDTO[]): number {
+    let total = 0;
+    items.forEach(item => total += item.price * item.amount);
+    return total;
+  }
+
+  public async getCartById(cartId: string): Promise<ICartDTO> {
+    const cartItems = await this.cartPersistence.findCartById(cartId);
+    return {
+      total: this.calculateCartTotal(cartItems),
+      items: cartItems
+    };
+  }
+
+
+  public async updateCart(item: IAddItemDTO): Promise<any> {
+    const result = await this.cartPersistence.updateCart(item);
+    if (!result) {
+      return result
+    }
+    const cart = await this.getCartById(item.cartId);
     return cart;
   }
 

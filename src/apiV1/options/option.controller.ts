@@ -85,12 +85,12 @@ export class OptionController {
         success: true,
       });
       return;
-    const categories = req.body;
-    const categoriesToUpdate = [];
-    const categoriesToCreate = [];
+    const options = req.body;
+    const optionsToUpdate = [];
+    const optionsToCreate = [];
 
-    categories.forEach(category => {
-      (category.id && !String(category.id).includes('temp') ? categoriesToUpdate : categoriesToCreate).push(category);
+    options.forEach(category => {
+      (category.id && !String(category.id).includes('temp') ? optionsToUpdate : optionsToCreate).push(category);
     });
 
     // const createPromises = categoriesToCreate.map(category =>

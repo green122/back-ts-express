@@ -20,7 +20,7 @@ export class CartRoute {
     // this.cart.get("/", this.controller.findAll);
 
     // Retrieve a Specific User
-    this.cart.get("/:id", this.controller.findOne);
+    this.cart.get("/", this.controller.findOne);
 
     // Update a User with Id
     // this.cart.put("/:id", this.controller.update);
@@ -28,8 +28,7 @@ export class CartRoute {
     // Create a User
     this.cart.post("/", this.controller.create);
 
-    // Update all Variations with Id
-    // this.cart.put("/", this.controller.update);
+    this.cart.put("/", this.controller.update);
 
     // Delete a User with Id
     // this.cart.delete("/:id", this.controller.remove);

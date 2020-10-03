@@ -17,4 +17,5 @@ export default {
 
   AWSAccessKeyId: process.env.AWSAccessKeyId,
   AWSSecretKey: process.env.AWSSecretKey,
+  googleClientId: "1063114410911-slnaa91kka6ltodhegaf1jlkli51jqto.apps.googleusercontent.com"
 };

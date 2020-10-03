@@ -6,9 +6,11 @@
   "rules": {
     "no-implicit-dependencies": [true, "dev"],
     "interface-over-type-literal": false,
+    "interface-name": false,
     "no-console": [true, "dev"],
     "object-literal-sort-keys": [false, "dev"],
     "max-classes-per-file": [false],
-    "ordered-imports": false
+    "ordered-imports": false,
+    "no-object-literal-type-assertion": [true, {"allow-arguments": true}]
   }
 }

@@ -63,9 +63,6 @@ export class PricesController {
   // };
 
   public update = async (req: Request, res: Response): Promise<any> => {
-    res.status(200).send({
-      success: true,
-    });
     const {categoryId, variationId, options} = req.body;
 
     await this.pricesDomain.updatePrices(categoryId, variationId, options);

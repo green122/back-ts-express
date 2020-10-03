@@ -19,6 +19,7 @@ Category.init({
   }, {sequelize, modelName: 'categories', timestamps: false}
 );
 
+Category.hasMany(Variation);
 Category.belongsToMany(Variation, { through: CategoryVariation, foreignKey: 'categoryId'});
 Variation.belongsToMany(Category, {through: CategoryVariation,  foreignKey: 'variationId'});
 

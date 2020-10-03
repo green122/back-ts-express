@@ -22,7 +22,7 @@ export class VariationDomain {
 
     await Promise.all([
       this.variationPersistance.updateOptionsVariations(variation, optionsToUpdate),
-      this.optionsDomain.createOptions(optionsToCreate),
+      this.optionsDomain.createOptions(optionsToCreate, variation),
       this.variationPersistance.updateVariation(variation)
     ]);
   }

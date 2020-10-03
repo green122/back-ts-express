@@ -4,11 +4,27 @@ import {Category} from "../categories/category.model";
 import {Option} from "../options/option.model";
 import {Listing} from "../listings/listing.model";
 import {Variation} from "../variations/variation.model";
+import {IOrderedListing} from "../listings/listing.domain";
 
 export interface IAddItemDTO {
   cartId?: string;
   listingId: number;
-  optionsVariations: IVariationOptions[];
+  orderedItemId?: number;
+  amount: number;
+  variationsOptions: IVariationOptions[];
+}
+
+export interface ICartItemDTO {
+  listing: IOrderedListing;
+  orderedItemId?: number;
+  amount: number;
+  price: number;
+  variationsOptions: IVariationOptions[];
+}
+
+export interface ICartDTO {
+  total: number;
+  items: ICartItemDTO[];
 }
 
 export interface IVariationOptions {
@@ -16,24 +32,49 @@ export interface IVariationOptions {
   optionId: string;
 }
 
+class Cart extends Model {
+}
+
+Cart.init({
+  id: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    field: 'id',
+    primaryKey: true
+  },
+  userId: {
+    type: Sequelize.NUMBER,
+    allowNull: true,
+    field: 'user_id',
+  },
+}, {sequelize, modelName: 'carts', timestamps: true,})
+
 class OrderedItem extends Model {
 }
 
 OrderedItem.init(
   {
+    id: {
+      type: Sequelize.INTEGER,
+      allowNull: true,
+      primaryKey: true,
+      autoIncrement: true,
+      autoIncrementIdentity: true
+    },
     cartId: {
       type: Sequelize.STRING,
       allowNull: false,
       field: 'cart_id'
     },
     listingId: {
-      type: Sequelize.NUMBER,
+      type: Sequelize.INTEGER,
       allowNull: false,
       field: 'listing_id'
     },
     amount: {
-      type: Sequelize.NUMBER,
-      allowNull: false
+      type: Sequelize.INTEGER,
+      allowNull: false,
+      field: 'amount'
     },
     createdAt: {
       field: 'created_at',
@@ -64,17 +105,19 @@ OrderedItemVariationOptions.init(
       primaryKey: true
     },
     optionId: {
-      type: Sequelize.BOOLEAN,
+      type: Sequelize.INTEGER,
       allowNull: true,
       field: 'option_id',
       primaryKey: true
     },
-  }, {sequelize, modelName: 'ordered_item_variation_options', timestamps: false,}
+  }, {sequelize, modelName: 'ordered_item_descriptions', timestamps: false,}
 );
 
 
-OrderedItem.hasMany(OrderedItemVariationOptions, {foreignKey: 'orderedItemId', as: 'orderedItemVariations'})
+Cart.hasMany(OrderedItem, {foreignKey: 'cart_id'});
+OrderedItem.hasMany(OrderedItemVariationOptions, { foreignKey: 'orderedItemId', as: 'orderedVariations'})
 OrderedItem.hasOne(Listing, {sourceKey: 'listingId', foreignKey: 'id'})
 OrderedItemVariationOptions.hasOne(Variation, {sourceKey: 'variationId', foreignKey: 'id'});
 OrderedItemVariationOptions.hasOne(Option, {sourceKey: 'optionId', foreignKey: 'id'});
-export {OrderedItem, OrderedItemVariationOptions};
+
+export {OrderedItem, OrderedItemVariationOptions, Cart};
